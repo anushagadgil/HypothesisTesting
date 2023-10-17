@@ -1,0 +1,290 @@
+---
+title: "Week7HypothesisTesting"
+author: "Anusha Gadgil"
+date: "2023-10-07"
+output: html_document
+---
+
+#Loading the packages
+```{r}
+library(tidyverse)
+library(dplyr)
+library(reshape2)
+library(gridExtra)
+library(ggplot2)
+
+# Install the pwr package if you haven't already
+install.packages("pwr")
+
+# Load the pwr package
+library(pwr)
+```
+
+## Loading the Dataset
+
+```{r}
+WineDataset<-read.csv("C:/Users/Anusha Gadgil/Desktop/wines_SPA (1).csv")
+head(WineDataset)
+sample_size<-nrow(WineDataset)
+print(sample_size)
+```
+
+## FIRST NULL HYPOTHESIS
+##1. There is no relationship between the Price and rating of Wines
+```{r}
+
+#I picked an alpha value of 0.05 because it is the standard recommended value 
+alpha<-0.05
+#I randomly selected a power level and then used that selected level to run a power test and check the required sample size for the given power level
+power <- 0.80
+
+min_effect_size <- 0.2
+
+# Check if the p-value is less than alpha
+
+```
+
+#checking if I have enough data to perform neyman pearsons test
+
+```{r}
+effect_size <- 0.04 
+alpha <- 0.05      
+power <- 0.80       
+
+
+required_sample_size <- pwr.t.test(
+  d = effect_size,
+  sig.level = alpha,
+  power = power,
+  type = "two.sample"  
+)$n
+
+
+if (required_sample_size >= sample_size) {
+  cat("You have enough data to perform the Neyman-Pearson test.\n")
+  # Perform your hypothesis test here
+} else {
+  cat("You do not have enough data to perform the Neyman-Pearson test.\n")
+  cat("Consider increasing your sample size to achieve the desired power.\n")
+}
+
+# Print the required sample size
+print(required_sample_size)
+
+```
+
+
+#Performing Neyman Pearson's test
+
+```{r}
+library(readr)
+# Extract the two columns
+column1 <- WineDataset$rating
+column2 <- WineDataset$price
+
+
+
+# Calculate sample statistics
+mean1 <- mean(column1)
+mean2 <- mean(column2)
+n1 <- length(column1)
+n2 <- length(column2)
+
+# Set alpha(significance level)
+alpha <- 0.05  
+
+# Calculate the test statistic (assuming equal variances)
+pooled_variance <- ((n1 - 1) * var(column1) + (n2 - 1) * var(column2)) / (n1 + n2 - 2)
+t_stat <- (mean1 - mean2) / (sqrt(pooled_variance * (1 / n1 + 1 / n2)))
+
+# Calculate the critical value (assuming a one-tailed test)
+critical_value <- qt(1 - alpha, df = n1 + n2 - 2)
+
+# Perform the Neyman-Pearson test
+if (t_stat > critical_value) {
+  cat("Reject the null hypothesis in favor of the alternative hypothesis.\n")
+} else {
+  cat("Fail to reject the null hypothesis.\n")
+}
+```
+#Fishers test
+```{r}
+test_result <- var.test(WineDataset$rating, WineDataset$price)
+
+# Extract the p-value
+p_value <- test_result$p.value
+
+# Interpret the p-value
+if (p_value < 0.05) {
+  cat("The p-value is less than 0.05, so there is evidence to reject the null hypothesis.\n")
+  cat("The variances of the two datasets are significantly different.\n")
+} else {
+  cat("The p-value is greater than or equal to 0.05, so we fail to reject the null hypothesis.\n")
+  cat("There is no strong evidence that the variances are different.\n")
+}
+
+# Print the test result summary
+print(test_result)
+
+```
+
+
+
+
+
+
+
+##SECOND NULL HYPOTHESIS
+##2.There is no difference between the average price of old and new wines.
+
+
+
+#finding range of the years
+```{r}
+
+WineDataset<-read.csv("C:/Users/Anusha Gadgil/Desktop/wines_SPA (1).csv")
+head(WineDataset)
+WineDataset <- WineDataset[complete.cases(WineDataset[, "year"]), ]
+
+year_range <- range(WineDataset$year)
+
+# Extract the minimum and maximum years
+min_year <- year_range[1]
+max_year <- year_range[2]
+
+# Print the result
+cat("Minimum year:", min_year, "\n")
+cat("Maximum year:", max_year, "\n")
+print(year_range)
+```
+
+#arranging data in order of year
+```{r}
+wine_data <- WineDataset %>% arrange(year)
+
+# View the resulting dataset
+head(wine_data)
+
+```
+
+#Slicing arranged dataset into 2 halfs
+```{r}
+num_rows <- nrow(wine_data)
+
+# Calculate the midpoint to split the data into two halves
+midpoint <- num_rows / 2
+
+# Split the data into two halves
+first_half <- wine_data[1:midpoint, ]
+second_half <- wine_data[(midpoint + 1):num_rows, ]
+print(num_rows)
+first_half
+```
+
+
+#Column 1 has the older wine, column 2 has the newer wine
+```{r}
+Old_price <- first_half$price
+New_price<- second_half$price
+samplesize<-nrow(first_half)
+samplesize
+```
+
+
+#checking if I have enough data in the columns to perform neyman pearsons test
+
+```{r}
+effect_size <- 0.04  # Desired effect size ()
+alpha <- 0.05       # Significance level (e.g., 0.05 for 5%)
+power <- 0.80       # Desired power level (e.g., 0.80 for 80%)
+
+
+required_sample_size <- pwr.t.test(
+  d = effect_size,
+  sig.level = alpha,
+  power = power,
+  type = "two.sample"  # Specify a two-sample t-test
+)$n
+
+
+if (required_sample_size >= samplesize) {
+  cat("You have enough data to perform the Neyman-Pearson test.\n")
+  # Perform your hypothesis test here
+} else {
+  cat("You do not have enough data to perform the Neyman-Pearson test.\n")
+  cat("Consider increasing your sample size to achieve the desired power.\n")
+}
+
+# Print the required sample size
+print(required_sample_size)
+
+```
+#Performing Neyman Pearson's test
+```{r}
+library(readr)
+# Extract the two columns
+Old_price <- first_half$price
+New_price<- second_half$price
+# Define your null and alternative hypotheses
+# H0: μ1 <= μ2 (Mean of column1 is less than or equal to the mean of column2)
+# H1: μ1 > μ2 (Mean of column1 is greater than the mean of column2)
+
+# Calculate sample statistics
+mean1 <- mean(Old_price)
+mean2 <- mean(New_price)
+n1 <- length(Old_price)
+n2 <- length(New_price)
+
+
+alpha <- 0.05  
+# Calculate the test statistic 
+pooled_variance <- ((n1 - 1) * var(column1) + (n2 - 1) * var(column2)) / (n1 + n2 - 2)
+t_stat <- (mean1 - mean2) / (sqrt(pooled_variance * (1 / n1 + 1 / n2)))
+
+# Calculating  the critical value 
+critical_value <- qt(1 - alpha, df = n1 + n2 - 2)
+
+# Perform the Neyman-Pearson test
+if (t_stat > critical_value) {
+  cat("Reject the null hypothesis and pick the alternative hypothesis.\n")
+} else {
+  cat("Fail to reject the null hypothesis.\n")
+}
+```
+
+
+
+#Fishers test
+```{r}
+test_result <- var.test(first_half$price, second_half$price)
+
+# Extract the p-value
+p_value <- test_result$p.value
+
+# Interpret the p-value
+if (p_value < 0.05) {
+  cat("The p-value is less than 0.05, so reject the null hypothesis.\n")
+  cat("The variances of the two datasets are different.\n")
+} else {
+  cat("The p-value is greater than 0.05, so we fail to reject the null hypothesis.\n")
+  cat("There is no strong evidence that the variances are different.\n")
+}
+
+
+print(test_result)
+
+```
+#Building a visualisation for Hypothesis 1
+```{r}
+hist(column1, col = "blue", main = "Histogram of Rating")
+hist(column2, col = "red", main = "Histogram of Price")
+```
+#Building a visualisation for Hypothesis 2
+```{r}
+boxplot(Old_price, New_price, names = c("Old_price", "New_price"))
+
+```
+```{r}
+hist(Old_price, col = "blue", main = "Histogram of Old_Price")
+hist(New_price, col = "red", main = "Histogram of New_Price")
+```
